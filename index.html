@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painting by Numbers Editor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Painting by Numbers Editor</h1>
+
+    <section class="controls">
+      <label>
+        Загрузить картинку
+        <input id="imageInput" type="file" accept="image/*" />
+      </label>
+
+      <label>
+        Размер
+        <select id="sizeSelect">
+          <option value="16">16 × 16</option>
+          <option value="32" selected>32 × 32</option>
+          <option value="64">64 × 64</option>
+        </select>
+      </label>
+
+      <label>
+        Количество цветов в палитре
+        <input id="paletteSize" type="number" min="2" max="32" value="8" />
+      </label>
+
+      <button id="processBtn" type="button">Применить</button>
+      <button id="saveBtn" type="button" disabled>Сохранить результат</button>
+    </section>
+
+    <section class="preview">
+      <article>
+        <h2>Оригинал</h2>
+        <canvas id="originalCanvas" width="320" height="320"></canvas>
+      </article>
+      <article>
+        <h2>Предпросмотр</h2>
+        <canvas id="resultCanvas" width="320" height="320"></canvas>
+      </article>
+    </section>
+
+    <section>
+      <h2>Палитра</h2>
+      <div id="palettePreview" class="palette"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
