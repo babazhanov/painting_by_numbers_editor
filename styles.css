@@ -43,6 +43,10 @@ button {
   font-size: 14px;
 }
 
+input[type='range'] {
+  padding: 0;
+}
+
 button {
   cursor: pointer;
   background: #2563eb;
