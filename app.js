@@ -58,114 +58,88 @@ function distanceSq(a, b) {
   return dr * dr + dg * dg + db * db;
 }
 
-function kMeansQuantization(pixels, k, maxIterations = 8) {
-  if (!pixels.length) return [];
+function colorToKey(color) {
+  return `${color[0]},${color[1]},${color[2]}`;
+}
 
-  const centroids = [];
-  const step = Math.max(1, Math.floor(pixels.length / k));
-  for (let i = 0; i < k; i += 1) {
-    centroids.push(pixels[(i * step) % pixels.length].slice());
+function extractSourcePalette(pixels) {
+  const paletteMap = new Map();
+
+  for (let i = 0; i < pixels.length; i += 1) {
+    const color = pixels[i];
+    const key = colorToKey(color);
+    const existing = paletteMap.get(key);
+
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+
+    paletteMap.set(key, { color: color.slice(), count: 1 });
   }
 
-  const assignments = new Array(pixels.length).fill(0);
+  return Array.from(paletteMap.values());
+}
 
-  for (let iter = 0; iter < maxIterations; iter += 1) {
-    for (let p = 0; p < pixels.length; p += 1) {
-      let bestCluster = 0;
-      let bestDistance = Infinity;
+function selectDistantPalette(fullPalette, targetSize) {
+  if (!fullPalette.length) return [];
 
-      for (let c = 0; c < centroids.length; c += 1) {
-        const d = distanceSq(pixels[p], centroids[c]);
-        if (d < bestDistance) {
-          bestDistance = d;
-          bestCluster = c;
+  const sortedPalette = fullPalette
+    .slice()
+    .sort((a, b) => b.count - a.count);
+
+  const maxPaletteSize = Math.min(targetSize, sortedPalette.length);
+  const selected = [sortedPalette[0].color.slice()];
+
+  while (selected.length < maxPaletteSize) {
+    let bestCandidate = null;
+    let bestDistance = -1;
+
+    for (let i = 0; i < sortedPalette.length; i += 1) {
+      const candidate = sortedPalette[i].color;
+      let minDistanceToSelected = Infinity;
+
+      for (let j = 0; j < selected.length; j += 1) {
+        const d = distanceSq(candidate, selected[j]);
+        if (d < minDistanceToSelected) {
+          minDistanceToSelected = d;
         }
       }
 
-      assignments[p] = bestCluster;
-    }
-
-    const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
-    for (let p = 0; p < pixels.length; p += 1) {
-      const cluster = assignments[p];
-      sums[cluster][0] += pixels[p][0];
-      sums[cluster][1] += pixels[p][1];
-      sums[cluster][2] += pixels[p][2];
-      sums[cluster][3] += 1;
-    }
-
-    for (let c = 0; c < k; c += 1) {
-      if (sums[c][3] === 0) continue;
-      centroids[c][0] = Math.round(sums[c][0] / sums[c][3]);
-      centroids[c][1] = Math.round(sums[c][1] / sums[c][3]);
-      centroids[c][2] = Math.round(sums[c][2] / sums[c][3]);
-    }
-  }
-
-  return { centroids, assignments };
-}
-
-function mergeCloseColors(centroids, assignments, distanceThresholdSq = 26 * 26) {
-  if (!centroids.length) {
-    return { centroids: [], assignments: [] };
-  }
-
-  const groups = centroids.map((_, index) => [index]);
-
-  for (let i = 0; i < groups.length; i += 1) {
-    let merged = false;
-
-    for (let j = i + 1; j < groups.length; j += 1) {
-      const colorA = centroids[groups[i][0]];
-      const colorB = centroids[groups[j][0]];
-
-      if (distanceSq(colorA, colorB) <= distanceThresholdSq) {
-        groups[i].push(...groups[j]);
-        groups.splice(j, 1);
-        merged = true;
-        break;
+      if (minDistanceToSelected > bestDistance) {
+        bestDistance = minDistanceToSelected;
+        bestCandidate = candidate;
       }
     }
 
-    if (merged) {
-      i -= 1;
+    if (!bestCandidate) break;
+    selected.push(bestCandidate.slice());
+  }
+
+  return selected;
+}
+
+function buildColorAssignmentMap(fullPalette, targetPalette) {
+  const assignments = new Map();
+
+  for (let i = 0; i < fullPalette.length; i += 1) {
+    const sourceColor = fullPalette[i].color;
+    const key = colorToKey(sourceColor);
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+
+    for (let j = 0; j < targetPalette.length; j += 1) {
+      const d = distanceSq(sourceColor, targetPalette[j]);
+      if (d < bestDistance) {
+        bestDistance = d;
+        bestIndex = j;
+      }
     }
+
+    assignments.set(key, bestIndex);
   }
 
-  const centroidUseCount = new Array(centroids.length).fill(0);
-  for (let i = 0; i < assignments.length; i += 1) {
-    centroidUseCount[assignments[i]] += 1;
-  }
-
-  const mergedCentroids = [];
-  const centroidToMerged = new Array(centroids.length).fill(0);
-
-  groups.forEach((group, mergedIndex) => {
-    let sumR = 0;
-    let sumG = 0;
-    let sumB = 0;
-    let totalWeight = 0;
-
-    group.forEach((centroidIndex) => {
-      const weight = centroidUseCount[centroidIndex] || 1;
-      const centroid = centroids[centroidIndex];
-      sumR += centroid[0] * weight;
-      sumG += centroid[1] * weight;
-      sumB += centroid[2] * weight;
-      totalWeight += weight;
-      centroidToMerged[centroidIndex] = mergedIndex;
-    });
-
-    mergedCentroids.push([
-      Math.round(sumR / totalWeight),
-      Math.round(sumG / totalWeight),
-      Math.round(sumB / totalWeight),
-    ]);
-  });
-
-  const mergedAssignments = assignments.map((cluster) => centroidToMerged[cluster]);
-
-  return { centroids: mergedCentroids, assignments: mergedAssignments };
+  return assignments;
 }
 
 function renderPalette(colors) {
@@ -200,17 +174,15 @@ function processImage() {
   const imageData = workCtx.getImageData(0, 0, size, size);
   const pixels = getPixels(imageData);
 
-  const quantized = kMeansQuantization(
-    pixels,
-    Math.max(2, Math.min(32, paletteSize))
-  );
-  const { centroids, assignments } = mergeCloseColors(
-    quantized.centroids,
-    quantized.assignments
-  );
+  const fullPalette = extractSourcePalette(pixels);
+  const resultPalette = selectDistantPalette(fullPalette, paletteSize);
+  const colorAssignments = buildColorAssignmentMap(fullPalette, resultPalette);
 
-  for (let i = 0, p = 0; i < imageData.data.length; i += 4, p += 1) {
-    const color = centroids[assignments[p]];
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    const sourceColor = [imageData.data[i], imageData.data[i + 1], imageData.data[i + 2]];
+    const colorKey = colorToKey(sourceColor);
+    const paletteIndex = colorAssignments.get(colorKey) ?? 0;
+    const color = resultPalette[paletteIndex];
     imageData.data[i] = color[0];
     imageData.data[i + 1] = color[1];
     imageData.data[i + 2] = color[2];
@@ -222,7 +194,7 @@ function processImage() {
   resultCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
 
-  renderPalette(centroids);
+  renderPalette(resultPalette);
   saveBtn.disabled = false;
 }
 
