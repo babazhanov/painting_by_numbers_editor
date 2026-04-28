@@ -77,6 +77,10 @@ canvas {
   image-rendering: pixelated;
 }
 
+#resultCanvas {
+  max-width: none;
+}
+
 .palette {
   display: flex;
   flex-wrap: wrap;
