@@ -85,6 +85,69 @@ function kMeansQuantization(pixels, k, maxIterations = 8) {
   return { centroids, assignments };
 }
 
+function mergeCloseColors(centroids, assignments, distanceThresholdSq = 26 * 26) {
+  if (!centroids.length) {
+    return { centroids: [], assignments: [] };
+  }
+
+  const groups = centroids.map((_, index) => [index]);
+
+  for (let i = 0; i < groups.length; i += 1) {
+    let merged = false;
+
+    for (let j = i + 1; j < groups.length; j += 1) {
+      const colorA = centroids[groups[i][0]];
+      const colorB = centroids[groups[j][0]];
+
+      if (distanceSq(colorA, colorB) <= distanceThresholdSq) {
+        groups[i].push(...groups[j]);
+        groups.splice(j, 1);
+        merged = true;
+        break;
+      }
+    }
+
+    if (merged) {
+      i -= 1;
+    }
+  }
+
+  const centroidUseCount = new Array(centroids.length).fill(0);
+  for (let i = 0; i < assignments.length; i += 1) {
+    centroidUseCount[assignments[i]] += 1;
+  }
+
+  const mergedCentroids = [];
+  const centroidToMerged = new Array(centroids.length).fill(0);
+
+  groups.forEach((group, mergedIndex) => {
+    let sumR = 0;
+    let sumG = 0;
+    let sumB = 0;
+    let totalWeight = 0;
+
+    group.forEach((centroidIndex) => {
+      const weight = centroidUseCount[centroidIndex] || 1;
+      const centroid = centroids[centroidIndex];
+      sumR += centroid[0] * weight;
+      sumG += centroid[1] * weight;
+      sumB += centroid[2] * weight;
+      totalWeight += weight;
+      centroidToMerged[centroidIndex] = mergedIndex;
+    });
+
+    mergedCentroids.push([
+      Math.round(sumR / totalWeight),
+      Math.round(sumG / totalWeight),
+      Math.round(sumB / totalWeight),
+    ]);
+  });
+
+  const mergedAssignments = assignments.map((cluster) => centroidToMerged[cluster]);
+
+  return { centroids: mergedCentroids, assignments: mergedAssignments };
+}
+
 function renderPalette(colors) {
   palettePreview.innerHTML = '';
   colors.forEach((color) => {
@@ -116,9 +179,13 @@ function processImage() {
   const imageData = workCtx.getImageData(0, 0, size, size);
   const pixels = getPixels(imageData);
 
-  const { centroids, assignments } = kMeansQuantization(
+  const quantized = kMeansQuantization(
     pixels,
     Math.max(2, Math.min(32, paletteSize))
+  );
+  const { centroids, assignments } = mergeCloseColors(
+    quantized.centroids,
+    quantized.assignments
   );
 
   for (let i = 0, p = 0; i < imageData.data.length; i += 4, p += 1) {
