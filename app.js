@@ -1,6 +1,7 @@
 const imageInput = document.getElementById('imageInput');
 const sizeSelect = document.getElementById('sizeSelect');
 const paletteSizeInput = document.getElementById('paletteSize');
+const paletteSizeSlider = document.getElementById('paletteSizeSlider');
 const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
@@ -14,6 +15,22 @@ originalCtx.imageSmoothingEnabled = false;
 resultCtx.imageSmoothingEnabled = false;
 
 let sourceImage = null;
+
+function getClampedPaletteSize(rawValue) {
+  const value = Number(rawValue);
+  if (Number.isNaN(value)) return 8;
+  return Math.max(2, Math.min(32, Math.round(value)));
+}
+
+function syncPaletteControls(rawValue, shouldProcess = false) {
+  const paletteSize = getClampedPaletteSize(rawValue);
+  paletteSizeInput.value = String(paletteSize);
+  paletteSizeSlider.value = String(paletteSize);
+
+  if (shouldProcess && sourceImage) {
+    processImage();
+  }
+}
 
 function drawImageFitted(ctx, image, targetSize) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -166,7 +183,8 @@ function processImage() {
   if (!sourceImage) return;
 
   const size = Number(sizeSelect.value);
-  const paletteSize = Number(paletteSizeInput.value) || 8;
+  const paletteSize = getClampedPaletteSize(paletteSizeInput.value);
+  syncPaletteControls(paletteSize);
 
   resultCanvas.width = size;
   resultCanvas.height = size;
@@ -226,6 +244,18 @@ imageInput.addEventListener('change', (event) => {
 });
 
 processBtn.addEventListener('click', processImage);
+
+paletteSizeInput.addEventListener('input', (event) => {
+  syncPaletteControls(event.target.value, true);
+});
+
+paletteSizeInput.addEventListener('change', (event) => {
+  syncPaletteControls(event.target.value, true);
+});
+
+paletteSizeSlider.addEventListener('input', (event) => {
+  syncPaletteControls(event.target.value, true);
+});
 
 saveBtn.addEventListener('click', () => {
   const link = document.createElement('a');
