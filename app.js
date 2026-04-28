@@ -10,6 +10,9 @@ const palettePreview = document.getElementById('palettePreview');
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
 
+originalCtx.imageSmoothingEnabled = false;
+resultCtx.imageSmoothingEnabled = false;
+
 let sourceImage = null;
 
 function drawImageFitted(ctx, image, targetSize) {
