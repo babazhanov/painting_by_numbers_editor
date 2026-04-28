@@ -102,6 +102,9 @@ function processImage() {
   const size = Number(sizeSelect.value);
   const paletteSize = Number(paletteSizeInput.value) || 8;
 
+  resultCanvas.width = size;
+  resultCanvas.height = size;
+
   const workCanvas = document.createElement('canvas');
   workCanvas.width = size;
   workCanvas.height = size;
