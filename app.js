@@ -2,6 +2,7 @@ const imageInput = document.getElementById('imageInput');
 const sizeSelect = document.getElementById('sizeSelect');
 const paletteSizeInput = document.getElementById('paletteSize');
 const paletteSizeSlider = document.getElementById('paletteSizeSlider');
+const mergeDistanceInput = document.getElementById('mergeDistance');
 const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
@@ -86,42 +87,46 @@ function extractSourcePalette(pixels) {
   return Array.from(paletteMap.values());
 }
 
-function selectDistantPalette(fullPalette, targetSize) {
+function getClampedMergeDistance(rawValue) {
+  const value = Number(rawValue);
+  if (Number.isNaN(value)) return 24;
+  return Math.max(0, Math.min(441.67, value));
+}
+
+function distance(a, b) {
+  return Math.sqrt(distanceSq(a, b));
+}
+
+function mergePaletteByDistance(fullPalette, mergeDistanceLimit) {
   if (!fullPalette.length) return [];
+  const sortedPalette = fullPalette.slice().sort((a, b) => b.count - a.count);
+  const mergedPalette = [];
 
-  const sortedPalette = fullPalette
-    .slice()
-    .sort((a, b) => b.count - a.count);
+  for (let i = 0; i < sortedPalette.length; i += 1) {
+    const entry = sortedPalette[i];
+    let merged = false;
 
-  const maxPaletteSize = Math.min(targetSize, sortedPalette.length);
-  const selected = [sortedPalette[0].color.slice()];
-
-  while (selected.length < maxPaletteSize) {
-    let bestCandidate = null;
-    let bestDistance = -1;
-
-    for (let i = 0; i < sortedPalette.length; i += 1) {
-      const candidate = sortedPalette[i].color;
-      let minDistanceToSelected = Infinity;
-
-      for (let j = 0; j < selected.length; j += 1) {
-        const d = distanceSq(candidate, selected[j]);
-        if (d < minDistanceToSelected) {
-          minDistanceToSelected = d;
-        }
-      }
-
-      if (minDistanceToSelected > bestDistance) {
-        bestDistance = minDistanceToSelected;
-        bestCandidate = candidate;
+    for (let j = 0; j < mergedPalette.length; j += 1) {
+      const cluster = mergedPalette[j];
+      if (distance(entry.color, cluster.color) < mergeDistanceLimit) {
+        const nextCount = cluster.count + entry.count;
+        cluster.color = [
+          Math.round((cluster.color[0] * cluster.count + entry.color[0] * entry.count) / nextCount),
+          Math.round((cluster.color[1] * cluster.count + entry.color[1] * entry.count) / nextCount),
+          Math.round((cluster.color[2] * cluster.count + entry.color[2] * entry.count) / nextCount),
+        ];
+        cluster.count = nextCount;
+        merged = true;
+        break;
       }
     }
 
-    if (!bestCandidate) break;
-    selected.push(bestCandidate.slice());
+    if (!merged) {
+      mergedPalette.push({ color: entry.color.slice(), count: entry.count });
+    }
   }
 
-  return selected;
+  return mergedPalette;
 }
 
 function buildColorAssignmentMap(fullPalette, targetPalette) {
@@ -180,7 +185,9 @@ function processImage() {
 
   const size = Number(sizeSelect.value);
   const paletteSize = getClampedPaletteSize(paletteSizeInput.value);
+  const mergeDistanceLimit = getClampedMergeDistance(mergeDistanceInput.value);
   syncPaletteControls(paletteSize);
+  mergeDistanceInput.value = String(mergeDistanceLimit);
 
   resultCanvas.width = size;
   resultCanvas.height = size;
@@ -197,7 +204,9 @@ function processImage() {
   const pixels = getPixels(imageData);
 
   const fullPalette = extractSourcePalette(pixels);
-  const resultPalette = selectDistantPalette(fullPalette, paletteSize);
+  const mergedPalette = mergePaletteByDistance(fullPalette, mergeDistanceLimit)
+    .sort((a, b) => b.count - a.count);
+  const resultPalette = mergedPalette.slice(0, paletteSize).map((entry) => entry.color.slice());
   const colorAssignments = buildColorAssignmentMap(fullPalette, resultPalette);
 
   for (let i = 0; i < imageData.data.length; i += 4) {
@@ -251,6 +260,10 @@ paletteSizeInput.addEventListener('change', (event) => {
 
 paletteSizeSlider.addEventListener('input', (event) => {
   syncPaletteControls(event.target.value, true);
+});
+
+mergeDistanceInput.addEventListener('change', () => {
+  if (sourceImage) processImage();
 });
 
 saveBtn.addEventListener('click', () => {
