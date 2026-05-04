@@ -27,6 +27,10 @@ function syncPaletteControls(rawValue, shouldProcess = false) {
   paletteSizeInput.value = String(paletteSize);
   paletteSizeSlider.value = String(paletteSize);
 
+  if (sourceImage) {
+    renderOriginalPalette();
+  }
+
   if (shouldProcess && sourceImage) {
     processImage();
   }
@@ -153,6 +157,23 @@ function renderPalette(colors) {
   });
 }
 
+
+function getCanvasPixels(ctx) {
+  const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+  return getPixels(imageData);
+}
+
+function renderOriginalPalette() {
+  if (!sourceImage) return;
+
+  const paletteSize = getClampedPaletteSize(paletteSizeInput.value);
+  const sourcePixels = getCanvasPixels(originalCtx);
+  const fullSourcePalette = extractSourcePalette(sourcePixels);
+  const previewPalette = selectDistantPalette(fullSourcePalette, paletteSize);
+
+  renderPalette(previewPalette);
+}
+
 function processImage() {
   if (!sourceImage) return;
 
@@ -194,7 +215,6 @@ function processImage() {
   resultCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
 
-  renderPalette(resultPalette);
   saveBtn.disabled = false;
 }
 
@@ -208,6 +228,7 @@ imageInput.addEventListener('change', (event) => {
     img.onload = () => {
       sourceImage = img;
       drawImageFitted(originalCtx, sourceImage, originalCanvas.width);
+      renderOriginalPalette();
       processImage();
     };
     img.src = reader.result;
