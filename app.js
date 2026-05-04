@@ -6,7 +6,8 @@ const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const resultCanvas = document.getElementById('resultCanvas');
-const palettePreview = document.getElementById('palettePreview');
+const sourcePalettePreview = document.getElementById('sourcePalettePreview');
+const resultPalettePreview = document.getElementById('resultPalettePreview');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
@@ -146,14 +147,14 @@ function buildColorAssignmentMap(fullPalette, targetPalette) {
   return assignments;
 }
 
-function renderPalette(colors) {
-  palettePreview.innerHTML = '';
+function renderPalette(colors, container) {
+  container.innerHTML = '';
   colors.forEach((color) => {
     const swatch = document.createElement('div');
     swatch.className = 'swatch';
     swatch.title = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
     swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-    palettePreview.appendChild(swatch);
+    container.appendChild(swatch);
   });
 }
 
@@ -171,7 +172,7 @@ function renderOriginalPalette() {
   const fullSourcePalette = extractSourcePalette(sourcePixels);
   const previewPalette = selectDistantPalette(fullSourcePalette, paletteSize);
 
-  renderPalette(previewPalette);
+  renderPalette(previewPalette, sourcePalettePreview);
 }
 
 function processImage() {
@@ -214,6 +215,8 @@ function processImage() {
   workCtx.putImageData(imageData, 0, 0);
   resultCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
+
+  renderPalette(resultPalette, resultPalettePreview);
 
   saveBtn.disabled = false;
 }
