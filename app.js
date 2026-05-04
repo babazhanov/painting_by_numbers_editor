@@ -167,12 +167,12 @@ function getCanvasPixels(ctx) {
 function renderOriginalPalette() {
   if (!sourceImage) return;
 
-  const paletteSize = getClampedPaletteSize(paletteSizeInput.value);
   const sourcePixels = getCanvasPixels(originalCtx);
-  const fullSourcePalette = extractSourcePalette(sourcePixels);
-  const previewPalette = selectDistantPalette(fullSourcePalette, paletteSize);
+  const fullSourcePalette = extractSourcePalette(sourcePixels)
+    .sort((a, b) => b.count - a.count)
+    .map((entry) => entry.color);
 
-  renderPalette(previewPalette, sourcePalettePreview);
+  renderPalette(fullSourcePalette, sourcePalettePreview);
 }
 
 function processImage() {
