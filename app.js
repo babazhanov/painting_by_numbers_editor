@@ -6,7 +6,8 @@ const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const resultCanvas = document.getElementById('resultCanvas');
-const palettePreview = document.getElementById('palettePreview');
+const sourcePalettePreview = document.getElementById('sourcePalettePreview');
+const resultPalettePreview = document.getElementById('resultPalettePreview');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
@@ -26,6 +27,10 @@ function syncPaletteControls(rawValue, shouldProcess = false) {
   const paletteSize = getClampedPaletteSize(rawValue);
   paletteSizeInput.value = String(paletteSize);
   paletteSizeSlider.value = String(paletteSize);
+
+  if (sourceImage) {
+    renderOriginalPalette();
+  }
 
   if (shouldProcess && sourceImage) {
     processImage();
@@ -142,15 +147,32 @@ function buildColorAssignmentMap(fullPalette, targetPalette) {
   return assignments;
 }
 
-function renderPalette(colors) {
-  palettePreview.innerHTML = '';
+function renderPalette(colors, container) {
+  container.innerHTML = '';
   colors.forEach((color) => {
     const swatch = document.createElement('div');
     swatch.className = 'swatch';
     swatch.title = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
     swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-    palettePreview.appendChild(swatch);
+    container.appendChild(swatch);
   });
+}
+
+
+function getCanvasPixels(ctx) {
+  const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+  return getPixels(imageData);
+}
+
+function renderOriginalPalette() {
+  if (!sourceImage) return;
+
+  const sourcePixels = getCanvasPixels(originalCtx);
+  const fullSourcePalette = extractSourcePalette(sourcePixels)
+    .sort((a, b) => b.count - a.count)
+    .map((entry) => entry.color);
+
+  renderPalette(fullSourcePalette, sourcePalettePreview);
 }
 
 function processImage() {
@@ -194,7 +216,8 @@ function processImage() {
   resultCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
 
-  renderPalette(resultPalette);
+  renderPalette(resultPalette, resultPalettePreview);
+
   saveBtn.disabled = false;
 }
 
@@ -208,6 +231,7 @@ imageInput.addEventListener('change', (event) => {
     img.onload = () => {
       sourceImage = img;
       drawImageFitted(originalCtx, sourceImage, originalCanvas.width);
+      renderOriginalPalette();
       processImage();
     };
     img.src = reader.result;
