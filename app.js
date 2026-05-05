@@ -8,6 +8,7 @@ const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const resultCanvas = document.getElementById('resultCanvas');
 const sourcePalettePreview = document.getElementById('sourcePalettePreview');
+const sourcePaletteCount = document.getElementById('sourcePaletteCount');
 const resultPalettePreview = document.getElementById('resultPalettePreview');
 
 const originalCtx = originalCanvas.getContext('2d');
@@ -173,11 +174,42 @@ function renderOriginalPalette() {
   if (!sourceImage) return;
 
   const sourcePixels = getCanvasPixels(originalCtx);
-  const fullSourcePalette = extractSourcePalette(sourcePixels)
-    .sort((a, b) => b.count - a.count)
-    .map((entry) => entry.color);
+  const fullSourcePalette = extractSourcePalette(sourcePixels).sort((a, b) => b.count - a.count);
+  const limitedSourcePalette = fullSourcePalette.slice(0, 32).map((entry) => entry.color);
 
-  renderPalette(fullSourcePalette, sourcePalettePreview);
+  if (sourcePaletteCount) {
+    sourcePaletteCount.textContent = `Цветов: ${numberToRussian(fullSourcePalette.length)}`;
+  }
+
+  renderPalette(limitedSourcePalette, sourcePalettePreview);
+}
+
+function numberToRussian(value) {
+  const integer = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+
+  const units = [
+    'ноль', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять',
+    'десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать',
+    'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать',
+  ];
+  const tens = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят', 'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
+  const hundreds = ['', 'сто', 'двести', 'триста', 'четыреста', 'пятьсот', 'шестьсот', 'семьсот', 'восемьсот', 'девятьсот'];
+
+  if (integer < 20) return units[integer];
+  if (integer < 100) {
+    const t = Math.floor(integer / 10);
+    const u = integer % 10;
+    return u === 0 ? tens[t] : `${tens[t]} ${units[u]}`;
+  }
+
+  if (integer < 1000) {
+    const h = Math.floor(integer / 100);
+    const rem = integer % 100;
+    if (rem === 0) return hundreds[h];
+    return `${hundreds[h]} ${numberToRussian(rem)}`;
+  }
+
+  return String(integer);
 }
 
 function processImage() {
