@@ -3,6 +3,7 @@ const sizeSelect = document.getElementById('sizeSelect');
 const paletteSizeInput = document.getElementById('paletteSize');
 const paletteSizeSlider = document.getElementById('paletteSizeSlider');
 const mergeDistanceInput = document.getElementById('mergeDistance');
+const mergeDistanceSlider = document.getElementById('mergeDistanceSlider');
 const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
@@ -89,8 +90,20 @@ function extractSourcePalette(pixels) {
 
 function getClampedMergeDistance(rawValue) {
   const value = Number(rawValue);
-  if (Number.isNaN(value)) return 24;
+  if (Number.isNaN(value)) return 48;
   return Math.max(0, Math.min(441.67, value));
+}
+
+function syncMergeDistanceControls(rawValue, shouldProcess = false) {
+  const mergeDistance = getClampedMergeDistance(rawValue);
+  const roundedMergeDistance = Math.round(mergeDistance);
+
+  mergeDistanceInput.value = String(mergeDistance);
+  mergeDistanceSlider.value = String(roundedMergeDistance);
+
+  if (shouldProcess && sourceImage) {
+    processImage();
+  }
 }
 
 function distance(a, b) {
@@ -187,7 +200,7 @@ function processImage() {
   const paletteSize = getClampedPaletteSize(paletteSizeInput.value);
   const mergeDistanceLimit = getClampedMergeDistance(mergeDistanceInput.value);
   syncPaletteControls(paletteSize);
-  mergeDistanceInput.value = String(mergeDistanceLimit);
+  syncMergeDistanceControls(mergeDistanceLimit);
 
   resultCanvas.width = size;
   resultCanvas.height = size;
@@ -262,8 +275,16 @@ paletteSizeSlider.addEventListener('input', (event) => {
   syncPaletteControls(event.target.value, true);
 });
 
-mergeDistanceInput.addEventListener('change', () => {
-  if (sourceImage) processImage();
+mergeDistanceInput.addEventListener('input', (event) => {
+  syncMergeDistanceControls(event.target.value, true);
+});
+
+mergeDistanceInput.addEventListener('change', (event) => {
+  syncMergeDistanceControls(event.target.value, true);
+});
+
+mergeDistanceSlider.addEventListener('input', (event) => {
+  syncMergeDistanceControls(event.target.value, true);
 });
 
 saveBtn.addEventListener('click', () => {
