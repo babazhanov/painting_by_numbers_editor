@@ -19,6 +19,7 @@ originalCtx.imageSmoothingEnabled = false;
 resultCtx.imageSmoothingEnabled = false;
 
 let sourceImage = null;
+const TRANSPARENT_BACKGROUND_COLOR = '#ffffff';
 
 function getClampedPaletteSize(rawValue) {
   const value = Number(rawValue);
@@ -42,6 +43,8 @@ function syncPaletteControls(rawValue, shouldProcess = false) {
 
 function drawImageFitted(ctx, image, targetSize) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.fillStyle = TRANSPARENT_BACKGROUND_COLOR;
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   const side = Math.min(image.width, image.height);
   const sx = (image.width - side) / 2;
   const sy = (image.height - side) / 2;
