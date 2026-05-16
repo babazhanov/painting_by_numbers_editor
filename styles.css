@@ -71,6 +71,12 @@ article h2 {
   font-size: 16px;
 }
 
+article h3 {
+  margin: 12px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 canvas {
   width: 100%;
   max-width: 320px;
@@ -83,6 +89,12 @@ canvas {
 
 #resultCanvas {
   max-width: none;
+}
+
+#finalResultCanvas {
+  width: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 .image-size {

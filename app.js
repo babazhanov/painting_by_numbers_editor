@@ -8,6 +8,7 @@ const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const resultCanvas = document.getElementById('resultCanvas');
+const finalResultCanvas = document.getElementById('finalResultCanvas');
 const sourcePalettePreview = document.getElementById('sourcePalettePreview');
 const sourcePaletteCount = document.getElementById('sourcePaletteCount');
 const resultPalettePreview = document.getElementById('resultPalettePreview');
@@ -16,9 +17,11 @@ const resultImageSize = document.getElementById('resultImageSize');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
+const finalResultCtx = finalResultCanvas.getContext('2d');
 
 originalCtx.imageSmoothingEnabled = false;
 resultCtx.imageSmoothingEnabled = false;
+finalResultCtx.imageSmoothingEnabled = false;
 
 let sourceImage = null;
 const TRANSPARENT_BACKGROUND_COLOR = '#ffffff';
@@ -264,6 +267,8 @@ function processImage() {
 
   resultCanvas.width = size;
   resultCanvas.height = size;
+  finalResultCanvas.width = size;
+  finalResultCanvas.height = size;
   updateResultImageSize(size);
 
   const workCanvas = document.createElement('canvas');
@@ -294,10 +299,15 @@ function processImage() {
     imageData.data[i + 3] = 255;
   }
 
-  resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
   workCtx.putImageData(imageData, 0, 0);
+
+  resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
   resultCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
+
+  finalResultCtx.clearRect(0, 0, finalResultCanvas.width, finalResultCanvas.height);
+  finalResultCtx.imageSmoothingEnabled = false;
+  finalResultCtx.drawImage(workCanvas, 0, 0, finalResultCanvas.width, finalResultCanvas.height);
 
   renderPalette(resultPalette, resultPalettePreview);
 
@@ -354,6 +364,6 @@ mergeDistanceSlider.addEventListener('input', (event) => {
 saveBtn.addEventListener('click', () => {
   const link = document.createElement('a');
   link.download = `painting-by-numbers-${Date.now()}.png`;
-  link.href = resultCanvas.toDataURL('image/png');
+  link.href = finalResultCanvas.toDataURL('image/png');
   link.click();
 });
