@@ -49,10 +49,17 @@
         <canvas id="originalCanvas" width="320" height="320"></canvas>
         <p id="originalImageSize" class="image-size">Исходный размер: —</p>
       </article>
-      <article>
+      <article class="result-column">
         <h2>Предпросмотр</h2>
-        <canvas id="resultCanvas" width="320" height="320"></canvas>
-        <p id="resultImageSize" class="image-size">Финальный размер: —</p>
+        <div class="result-preview-group">
+          <h3>Финальная картинка по ширине</h3>
+          <canvas id="resultCanvas" class="result-canvas-stretched" width="320" height="320"></canvas>
+        </div>
+        <div class="result-preview-group">
+          <h3>Финальная картинка в итоговом размере</h3>
+          <canvas id="finalSizeCanvas" class="result-canvas-final-size" width="320" height="320"></canvas>
+          <p id="resultImageSize" class="image-size">Финальный размер: —</p>
+        </div>
       </article>
     </section>
 
