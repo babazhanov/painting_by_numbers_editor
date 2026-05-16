@@ -8,6 +8,7 @@ const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const resultCanvas = document.getElementById('resultCanvas');
+const finalSizeCanvas = document.getElementById('finalSizeCanvas');
 const sourcePalettePreview = document.getElementById('sourcePalettePreview');
 const sourcePaletteCount = document.getElementById('sourcePaletteCount');
 const resultPalettePreview = document.getElementById('resultPalettePreview');
@@ -16,9 +17,11 @@ const resultImageSize = document.getElementById('resultImageSize');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
+const finalSizeCtx = finalSizeCanvas.getContext('2d');
 
 originalCtx.imageSmoothingEnabled = false;
 resultCtx.imageSmoothingEnabled = false;
+finalSizeCtx.imageSmoothingEnabled = false;
 
 let sourceImage = null;
 const TRANSPARENT_BACKGROUND_COLOR = '#ffffff';
@@ -264,6 +267,8 @@ function processImage() {
 
   resultCanvas.width = size;
   resultCanvas.height = size;
+  finalSizeCanvas.width = size;
+  finalSizeCanvas.height = size;
   updateResultImageSize(size);
 
   const workCanvas = document.createElement('canvas');
@@ -295,9 +300,12 @@ function processImage() {
   }
 
   resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+  finalSizeCtx.clearRect(0, 0, finalSizeCanvas.width, finalSizeCanvas.height);
   workCtx.putImageData(imageData, 0, 0);
   resultCtx.imageSmoothingEnabled = false;
+  finalSizeCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
+  finalSizeCtx.drawImage(workCanvas, 0, 0, finalSizeCanvas.width, finalSizeCanvas.height);
 
   renderPalette(resultPalette, resultPalettePreview);
 
