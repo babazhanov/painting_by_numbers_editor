@@ -13,15 +13,12 @@ const sourcePaletteCount = document.getElementById('sourcePaletteCount');
 const resultPalettePreview = document.getElementById('resultPalettePreview');
 const originalImageSize = document.getElementById('originalImageSize');
 const resultImageSize = document.getElementById('resultImageSize');
-const finalResultCanvas = document.getElementById('finalResultCanvas');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
-const finalResultCtx = finalResultCanvas.getContext('2d');
 
 originalCtx.imageSmoothingEnabled = false;
 resultCtx.imageSmoothingEnabled = false;
-finalResultCtx.imageSmoothingEnabled = false;
 
 let sourceImage = null;
 const TRANSPARENT_BACKGROUND_COLOR = '#ffffff';
@@ -268,8 +265,6 @@ function processImage() {
   resultCanvas.width = size;
   resultCanvas.height = size;
   updateResultImageSize(size);
-  finalResultCanvas.width = size;
-  finalResultCanvas.height = size;
 
   const workCanvas = document.createElement('canvas');
   workCanvas.width = size;
@@ -299,20 +294,81 @@ function processImage() {
     imageData.data[i + 3] = 255;
   }
 
-  workCtx.putImageData(imageData, 0, 0);
-
   resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+  workCtx.putImageData(imageData, 0, 0);
   resultCtx.imageSmoothingEnabled = false;
   resultCtx.drawImage(workCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
-
-  finalResultCtx.clearRect(0, 0, finalResultCanvas.width, finalResultCanvas.height);
-  finalResultCtx.imageSmoothingEnabled = false;
-  finalResultCtx.drawImage(workCanvas, 0, 0, finalResultCanvas.width, finalResultCanvas.height);
 
   renderPalette(resultPalette, resultPalettePreview);
 
   saveBtn.disabled = false;
 }
+
+
+let finalResultCanvas = null;
+let finalResultCtx = null;
+
+function styleResultHeading(heading) {
+  heading.style.margin = '12px 0 8px';
+  heading.style.fontSize = '14px';
+  heading.style.fontWeight = '600';
+}
+
+function ensureResultPreviewLayout() {
+  if (!document.getElementById('resultPreviewHeading')) {
+    const previewHeading = document.createElement('h3');
+    previewHeading.id = 'resultPreviewHeading';
+    previewHeading.textContent = 'Увеличенный результат';
+    styleResultHeading(previewHeading);
+    resultCanvas.parentNode.insertBefore(previewHeading, resultCanvas);
+  }
+
+  resultCanvas.style.width = '100%';
+  resultCanvas.style.maxWidth = 'none';
+  resultCanvas.style.height = 'auto';
+
+  if (!finalResultCanvas) {
+    const finalHeading = document.createElement('h3');
+    finalHeading.textContent = 'Картинка в финальном размере';
+    styleResultHeading(finalHeading);
+
+    finalResultCanvas = document.createElement('canvas');
+    finalResultCanvas.id = 'finalResultCanvas';
+    finalResultCanvas.style.width = 'auto';
+    finalResultCanvas.style.maxWidth = '100%';
+    finalResultCanvas.style.height = 'auto';
+    finalResultCanvas.style.border = '1px solid #d1d5db';
+    finalResultCanvas.style.borderRadius = '8px';
+    finalResultCanvas.style.background = 'white';
+    finalResultCanvas.style.imageRendering = 'pixelated';
+
+    resultImageSize.insertAdjacentElement('afterend', finalResultCanvas);
+    resultImageSize.insertAdjacentElement('afterend', finalHeading);
+    finalResultCtx = finalResultCanvas.getContext('2d');
+    finalResultCtx.imageSmoothingEnabled = false;
+  }
+
+  return { canvas: finalResultCanvas, ctx: finalResultCtx };
+}
+
+function syncFinalResultCanvas() {
+  const finalResult = ensureResultPreviewLayout();
+  finalResult.canvas.width = resultCanvas.width;
+  finalResult.canvas.height = resultCanvas.height;
+  finalResult.ctx.clearRect(0, 0, finalResult.canvas.width, finalResult.canvas.height);
+  finalResult.ctx.imageSmoothingEnabled = false;
+  finalResult.ctx.drawImage(resultCanvas, 0, 0);
+}
+
+const renderProcessedImage = processImage;
+processImage = function processImageWithFinalPreview() {
+  renderProcessedImage();
+  if (sourceImage) {
+    syncFinalResultCanvas();
+  }
+};
+
+ensureResultPreviewLayout();
 
 imageInput.addEventListener('change', (event) => {
   const [file] = event.target.files;
@@ -364,6 +420,6 @@ mergeDistanceSlider.addEventListener('input', (event) => {
 saveBtn.addEventListener('click', () => {
   const link = document.createElement('a');
   link.download = `painting-by-numbers-${Date.now()}.png`;
-  link.href = finalResultCanvas.toDataURL('image/png');
+  link.href = resultCanvas.toDataURL('image/png');
   link.click();
 });
