@@ -11,6 +11,8 @@ const resultCanvas = document.getElementById('resultCanvas');
 const sourcePalettePreview = document.getElementById('sourcePalettePreview');
 const sourcePaletteCount = document.getElementById('sourcePaletteCount');
 const resultPalettePreview = document.getElementById('resultPalettePreview');
+const originalImageSize = document.getElementById('originalImageSize');
+const resultImageSize = document.getElementById('resultImageSize');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
@@ -20,6 +22,29 @@ resultCtx.imageSmoothingEnabled = false;
 
 let sourceImage = null;
 const TRANSPARENT_BACKGROUND_COLOR = '#ffffff';
+
+function formatImageSize(width, height) {
+  return `${width} × ${height} px`;
+}
+
+function updateOriginalImageSize() {
+  if (!originalImageSize) return;
+  if (!sourceImage) {
+    originalImageSize.textContent = 'Исходный размер: —';
+    return;
+  }
+
+  const width = sourceImage.naturalWidth || sourceImage.width;
+  const height = sourceImage.naturalHeight || sourceImage.height;
+  originalImageSize.textContent = `Исходный размер: ${formatImageSize(width, height)}`;
+}
+
+function updateResultImageSize(size) {
+  if (!resultImageSize) return;
+  resultImageSize.textContent = Number.isFinite(size)
+    ? `Финальный размер: ${formatImageSize(size, size)}`
+    : 'Финальный размер: —';
+}
 
 function getClampedPaletteSize(rawValue) {
   const value = Number(rawValue);
@@ -239,6 +264,7 @@ function processImage() {
 
   resultCanvas.width = size;
   resultCanvas.height = size;
+  updateResultImageSize(size);
 
   const workCanvas = document.createElement('canvas');
   workCanvas.width = size;
@@ -287,6 +313,7 @@ imageInput.addEventListener('change', (event) => {
     const img = new Image();
     img.onload = () => {
       sourceImage = img;
+      updateOriginalImageSize();
       drawImageFitted(originalCtx, sourceImage, originalCanvas.width);
       renderOriginalPalette();
       processImage();
@@ -297,6 +324,8 @@ imageInput.addEventListener('change', (event) => {
 });
 
 processBtn.addEventListener('click', processImage);
+
+sizeSelect.addEventListener('change', processImage);
 
 paletteSizeInput.addEventListener('input', (event) => {
   syncPaletteControls(event.target.value, true);
