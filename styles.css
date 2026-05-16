@@ -88,10 +88,6 @@ canvas {
 }
 
 #resultCanvas {
-  max-width: none;
-}
-
-#finalResultCanvas {
   width: auto;
   max-width: 100%;
   height: auto;
@@ -101,6 +97,17 @@ canvas {
   margin: 8px 0 0;
   color: #4b5563;
   font-size: 14px;
+}
+
+.preview article:last-child #resultCanvas {
+  width: 100%;
+  max-width: none;
+}
+
+#finalResultCanvas {
+  width: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 .palette {

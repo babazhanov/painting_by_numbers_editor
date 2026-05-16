@@ -8,12 +8,12 @@ const processBtn = document.getElementById('processBtn');
 const saveBtn = document.getElementById('saveBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const resultCanvas = document.getElementById('resultCanvas');
-const finalResultCanvas = document.getElementById('finalResultCanvas');
 const sourcePalettePreview = document.getElementById('sourcePalettePreview');
 const sourcePaletteCount = document.getElementById('sourcePaletteCount');
 const resultPalettePreview = document.getElementById('resultPalettePreview');
 const originalImageSize = document.getElementById('originalImageSize');
 const resultImageSize = document.getElementById('resultImageSize');
+const finalResultCanvas = document.getElementById('finalResultCanvas');
 
 const originalCtx = originalCanvas.getContext('2d');
 const resultCtx = resultCanvas.getContext('2d');
@@ -267,9 +267,9 @@ function processImage() {
 
   resultCanvas.width = size;
   resultCanvas.height = size;
+  updateResultImageSize(size);
   finalResultCanvas.width = size;
   finalResultCanvas.height = size;
-  updateResultImageSize(size);
 
   const workCanvas = document.createElement('canvas');
   workCanvas.width = size;
